@@ -42,8 +42,8 @@ A Next.js application that helps you clean up your Gmail inbox by identifying an
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd gmail-cleanup
+git clone https://github.com/mdzyaan/ai-gmail-cleaner.git
+cd ai-gmail-clenaer
 ```
 
 2. Install dependencies:
