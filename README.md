@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gmail Marketing Email Cleaner
 
-## Getting Started
+A Next.js application that helps you clean up your Gmail inbox by identifying and removing marketing and promotional emails using Google's Gmail API.
 
-First, run the development server:
+## Features
 
+- OAuth authentication with Google
+- Scan inbox for marketing emails
+- Batch delete selected emails
+- Modern UI with Tailwind CSS and shadcn/ui
+- Fully responsive design
+
+## Prerequisites
+
+- Node.js 18+ and npm
+- A Google Cloud Project with Gmail API enabled
+- OAuth 2.0 credentials (Client ID and Client Secret)
+
+## Setup
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd gmail-cleanup
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Create a `.env.local` file in the root directory with the following variables:
+```env
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_random_secret
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Get your Google OAuth credentials:
+   - Go to the [Google Cloud Console](https://console.cloud.google.com)
+   - Create a new project or select an existing one
+   - Enable the Gmail API
+   - Configure the OAuth consent screen
+   - Create OAuth 2.0 credentials (Web application)
+   - Add authorized redirect URIs:
+     - http://localhost:3000/api/auth/callback/google (for development)
+     - https://your-domain.com/api/auth/callback/google (for production)
 
-## Learn More
+5. Run the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Usage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Click "Connect Gmail Account" to authenticate with Google
+2. Once connected, click "Scan Marketing Emails" to analyze your inbox
+3. Select the emails you want to remove
+4. Click "Delete Selected" to move them to trash
 
-## Deploy on Vercel
+## Technology Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [Next.js](https://nextjs.org/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [NextAuth.js](https://next-auth.js.org/)
+- [Gmail API](https://developers.google.com/gmail/api)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
