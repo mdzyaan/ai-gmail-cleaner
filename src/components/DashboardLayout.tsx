@@ -8,8 +8,8 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const sidebarItems = [
     {
-      title: "Dashboard",
-      href: "/dashboard",
+      title: "Emails",
+      href: "/emails",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -21,16 +21,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           strokeLinejoin="round"
           className="h-4 w-4"
         >
-          <rect width="7" height="9" x="3" y="3" rx="1" />
-          <rect width="7" height="5" x="14" y="3" rx="1" />
-          <rect width="7" height="9" x="14" y="12" rx="1" />
-          <rect width="7" height="5" x="3" y="16" rx="1" />
+          <rect width="20" height="16" x="2" y="4" rx="2" />
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
         </svg>
       ),
     },
     {
       title: "Analytics",
-      href: "/dashboard/analytics",
+      href: "/analytics",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -49,7 +47,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     },
     {
       title: "Settings",
-      href: "/dashboard/settings",
+      href: "/settings",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"

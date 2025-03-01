@@ -11,7 +11,7 @@ export default function Login() {
 
   useEffect(() => {
     if (session) {
-      router.push('/dashboard');
+      router.push('/emails');
     }
   }, [session, router]);
 
@@ -27,7 +27,7 @@ export default function Login() {
         <div className="mt-8 space-y-6">
           <Button
             className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            onClick={() => signIn('google', { callbackUrl: '/emails' })}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path

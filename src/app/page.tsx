@@ -21,9 +21,9 @@ export default function Home() {
           </p>
           <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
             {session ? (
-              <Link href="/dashboard">
+              <Link href="/emails">
                 <Button size="lg" className="w-full sm:w-auto">
-                  Go to Dashboard
+                  Go to Emails
                 </Button>
               </Link>
             ) : (
