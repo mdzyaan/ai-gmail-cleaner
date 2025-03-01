@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { signOut, useSession } from 'next-auth/react';
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function Header() {
   const { data: session } = useSession();
@@ -7,6 +8,7 @@ export function Header() {
   return (
     <header className="border-b border-gray-200 bg-white">
       <div className="flex h-16 items-center px-4 gap-4">
+        <SidebarTrigger />
         <div className="flex-1">
           <h2 className="text-lg font-semibold">Gmail Cleanup</h2>
         </div>
