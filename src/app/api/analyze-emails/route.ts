@@ -165,10 +165,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Not authenticated', code: 'UNAUTHENTICATED' }, { status: 401 });
     }
 
-    // Get pagination parameters from URL
+    // Get pagination parameters and settings from URL
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '5');
+    const temperature = parseFloat(url.searchParams.get('temperature') || '0.7');
 
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,

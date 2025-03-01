@@ -119,3 +119,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Toggle Switch */
+.toggle-checkbox:checked {
+  right: 0;
+  border-color: #fff;
+}
+.toggle-checkbox:checked + .toggle-label {
+  background-color: #3b82f6;
+}
+.toggle-checkbox {
+  right: 0;
+  transition: all 0.3s;
+  border-color: #e5e7eb;
+}
+.toggle-label {
+  transition: background-color 0.3s;
+  background-color: #e5e7eb;
+}

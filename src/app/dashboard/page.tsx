@@ -25,6 +25,14 @@ interface Email {
   analysis?: EmailAnalysis;
 }
 
+interface Settings {
+  emailFetchLimit: number;
+  aiTemperature: number;
+  autoDeleteThreshold: number;
+  markAsReadOnOpen: boolean;
+  showMarketingLabels: boolean;
+}
+
 export default function Dashboard() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -35,7 +43,21 @@ export default function Dashboard() {
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const EMAILS_PER_PAGE = 5;
+  const [settings, setSettings] = useState<Settings>({
+    emailFetchLimit: 5,
+    aiTemperature: 0.7,
+    autoDeleteThreshold: 0.9,
+    markAsReadOnOpen: true,
+    showMarketingLabels: true,
+  });
+
+  useEffect(() => {
+    // Load settings from localStorage
+    const savedSettings = localStorage.getItem('emailCleanupSettings');
+    if (savedSettings) {
+      setSettings(JSON.parse(savedSettings));
+    }
+  }, []);
 
   useEffect(() => {
     if (!session) {
@@ -47,12 +69,13 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const currentPage = isLoadMore ? page : 1;
-      const response = await fetch(`/api/analyze-emails?page=${currentPage}&limit=${EMAILS_PER_PAGE}`);
+      const response = await fetch(
+        `/api/analyze-emails?page=${currentPage}&limit=${settings.emailFetchLimit}&temperature=${settings.aiTemperature}`
+      );
       const data = await response.json();
       
       if (!response.ok) {
         if (data.code === 'TOKEN_EXPIRED' || data.code === 'UNAUTHENTICATED') {
-          // Automatically sign out if the session is expired or invalid
           await signOut();
           return;
         }
@@ -77,11 +100,15 @@ export default function Dashboard() {
           }
         }
         
-        setHasMore(data.emails.length === EMAILS_PER_PAGE);
+        setHasMore(data.emails.length === settings.emailFetchLimit);
 
+        // Auto-select marketing emails based on confidence threshold
         const marketingEmails = new Set<string>(
           data.emails
-            .filter((email: Email) => email.analysis?.isMarketing)
+            .filter((email: Email) => 
+              email.analysis?.isMarketing && 
+              email.analysis.confidence >= settings.autoDeleteThreshold
+            )
             .map((email: Email) => email.id)
         );
         
@@ -164,8 +191,8 @@ export default function Dashboard() {
 
   const toggleEmailExpansion = (id: string) => {
     setExpandedEmail(expandedEmail === id ? null : id);
-    // Mark as read when expanded
-    if (expandedEmail !== id) {
+    // Mark as read when expanded if the setting is enabled
+    if (expandedEmail !== id && settings.markAsReadOnOpen) {
       markAsRead(id);
     }
   };
@@ -287,7 +314,7 @@ export default function Dashboard() {
                           <p className={`text-sm truncate mt-1 ${!email.isRead ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
                             {email.subject}
                           </p>
-                          {email.analysis && (
+                          {email.analysis && settings.showMarketingLabels && (
                             <div className={`text-xs mt-1 ${
                               email.analysis.isMarketing ? 'text-red-600' : 'text-green-600'
                             }`}>
