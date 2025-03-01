@@ -5,6 +5,12 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from "@/components/ui/button";
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+// import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface Settings {
   emailFetchLimit: number;
@@ -17,6 +23,7 @@ interface Settings {
 export default function Settings() {
   const { data: session } = useSession();
   const router = useRouter();
+  // const { toast } = useToast();
   const [settings, setSettings] = useState<Settings>({
     emailFetchLimit: 5,
     aiTemperature: 0.7,
@@ -43,6 +50,12 @@ export default function Settings() {
     setIsSaving(true);
     // Save settings to localStorage
     localStorage.setItem('emailCleanupSettings', JSON.stringify(settings));
+    
+    // toast({
+    //   title: "Settings saved",
+    //   description: "Your preferences have been updated successfully.",
+    // });
+    
     setTimeout(() => setIsSaving(false), 500);
   };
 
@@ -52,151 +65,152 @@ export default function Settings() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
-          
-          <div className="space-y-6">
-            {/* Email Analysis Settings */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Email Analysis</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Number of Emails to Fetch
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={settings.emailFetchLimit}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      emailFetchLimit: parseInt(e.target.value)
-                    }))}
-                    className="block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Number of emails to analyze at once (1-50)
-                  </p>
-                </div>
+      <div className="p-8 max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+            <p className="text-muted-foreground">
+              Manage your email analysis preferences
+            </p>
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSaving ? 'Saving...' : 'Save changes'}
+          </Button>
+        </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+        <Separator />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Email Analysis</CardTitle>
+            <CardDescription>
+              Configure how emails are analyzed and processed
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">
+                    Emails to Fetch
+                  </label>
+                  <span className="text-sm text-muted-foreground">
+                    {settings.emailFetchLimit} emails
+                  </span>
+                </div>
+                <Slider
+                  value={[settings.emailFetchLimit]}
+                  onValueChange={(value) => setSettings(prev => ({
+                    ...prev,
+                    emailFetchLimit: value[0]
+                  }))}
+                  max={50}
+                  min={1}
+                  step={1}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">
                     AI Temperature
                   </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={settings.aiTemperature}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      aiTemperature: parseFloat(e.target.value)
-                    }))}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>More Focused ({settings.aiTemperature})</span>
-                    <span>More Creative</span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Adjust how creative the AI should be in analyzing emails
-                  </p>
+                  <span className="text-sm text-muted-foreground">
+                    {settings.aiTemperature.toFixed(1)}
+                  </span>
                 </div>
+                <Slider
+                  value={[settings.aiTemperature * 100]}
+                  onValueChange={(value) => setSettings(prev => ({
+                    ...prev,
+                    aiTemperature: value[0] / 100
+                  }))}
+                  max={100}
+                  step={10}
+                  className="mt-2"
+                />
+                <p className="text-sm text-muted-foreground mt-1.5">
+                  Lower values make the AI more focused, higher values make it more creative
+                </p>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Auto-Delete Confidence Threshold
+              <div>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">
+                    Auto-Delete Threshold
                   </label>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="1"
-                    step="0.05"
-                    value={settings.autoDeleteThreshold}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      autoDeleteThreshold: parseFloat(e.target.value)
-                    }))}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>Less Strict ({Math.round(settings.autoDeleteThreshold * 100)}%)</span>
-                    <span>More Strict</span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Minimum confidence level to auto-select marketing emails
-                  </p>
+                  <span className="text-sm text-muted-foreground">
+                    {Math.round(settings.autoDeleteThreshold * 100)}%
+                  </span>
                 </div>
+                <Slider
+                  value={[settings.autoDeleteThreshold * 100]}
+                  onValueChange={(value) => setSettings(prev => ({
+                    ...prev,
+                    autoDeleteThreshold: value[0] / 100
+                  }))}
+                  max={100}
+                  min={50}
+                  step={5}
+                  className="mt-2"
+                />
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Interface Settings */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Interface Settings</h2>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Mark as Read on Open
-                    </label>
-                    <p className="text-sm text-gray-500">
-                      Automatically mark emails as read when opened
-                    </p>
-                  </div>
-                  <div className="relative inline-block w-12 mr-2 align-middle select-none">
-                    <input
-                      type="checkbox"
-                      checked={settings.markAsReadOnOpen}
-                      onChange={(e) => setSettings(prev => ({
-                        ...prev,
-                        markAsReadOnOpen: e.target.checked
-                      }))}
-                      className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-                    />
-                    <label className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${settings.markAsReadOnOpen ? 'bg-blue-500' : 'bg-gray-300'}`} />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Show Marketing Labels
-                    </label>
-                    <p className="text-sm text-gray-500">
-                      Display marketing/promotional labels on emails
-                    </p>
-                  </div>
-                  <div className="relative inline-block w-12 mr-2 align-middle select-none">
-                    <input
-                      type="checkbox"
-                      checked={settings.showMarketingLabels}
-                      onChange={(e) => setSettings(prev => ({
-                        ...prev,
-                        showMarketingLabels: e.target.checked
-                      }))}
-                      className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-                    />
-                    <label className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${settings.showMarketingLabels ? 'bg-blue-500' : 'bg-gray-300'}`} />
-                  </div>
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Interface Preferences</CardTitle>
+            <CardDescription>
+              Customize your email management experience
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium">
+                  Mark as Read on Open
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  Automatically mark emails as read when opened
+                </p>
               </div>
+              <Switch
+                checked={settings.markAsReadOnOpen}
+                onCheckedChange={(checked) => setSettings(prev => ({
+                  ...prev,
+                  markAsReadOnOpen: checked
+                }))}
+              />
             </div>
 
-            <div className="flex justify-end">
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? 'Saving...' : 'Save Settings'}
-              </Button>
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium">
+                  Show Marketing Labels
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  Display AI analysis results inline with emails
+                </p>
+              </div>
+              <Switch
+                checked={settings.showMarketingLabels}
+                onCheckedChange={(checked) => setSettings(prev => ({
+                  ...prev,
+                  showMarketingLabels: checked
+                }))}
+              />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

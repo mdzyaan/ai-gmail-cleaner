@@ -6,6 +6,16 @@ import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command"
 
 interface EmailAnalysis {
   isMarketing: boolean;
@@ -50,6 +60,7 @@ export default function Dashboard() {
     markAsReadOnOpen: true,
     showMarketingLabels: true,
   });
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     // Load settings from localStorage
@@ -64,6 +75,17 @@ export default function Dashboard() {
       router.push('/login');
     }
   }, [session, router]);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setOpen(true)
+      }
+    }
+    document.addEventListener("keydown", down)
+    return () => document.removeEventListener("keydown", down)
+  }, [])
 
   const handleScan = async (isLoadMore: boolean = false) => {
     try {
@@ -424,68 +446,83 @@ export default function Dashboard() {
                       )}
                     </div>
                     <div className="p-6">
-                      <iframe
-                        srcDoc={`
-                          <!DOCTYPE html>
-                          <html>
-                            <head>
-                              <base target="_blank">
-                              <meta charset="utf-8">
-                              <meta name="viewport" content="width=device-width, initial-scale=1">
-                              <style>
-                                body {
-                                  font-family: system-ui, -apple-system, sans-serif;
-                                  line-height: 1.5;
-                                  margin: 0;
-                                  padding: 16px;
-                                  color: #374151;
-                                  font-size: 16px;
-                                }
-                                img {
-                                  max-width: 100%;
-                                  height: auto;
-                                  display: block;
-                                  margin: 1em 0;
-                                }
-                                a {
-                                  color: #2563eb;
-                                  text-decoration: none;
-                                }
-                                a:hover {
-                                  text-decoration: underline;
-                                }
-                                table {
-                                  max-width: 100%;
-                                  border-collapse: collapse;
-                                }
-                                td, th {
-                                  padding: 8px;
-                                  border: 1px solid #e5e7eb;
-                                }
-                                p {
-                                  margin: 1em 0;
-                                }
-                                pre, code {
-                                  white-space: pre-wrap;
-                                  word-wrap: break-word;
-                                }
-                                blockquote {
-                                  margin: 1em 0;
-                                  padding-left: 1em;
-                                  border-left: 4px solid #e5e7eb;
-                                  color: #6b7280;
-                                }
-                              </style>
-                            </head>
-                            <body>
-                              ${emails.find(e => e.id === expandedEmail)?.body || 
-                                `<div style="white-space: pre-wrap;">${emails.find(e => e.id === expandedEmail)?.text || ''}</div>`}
-                            </body>
-                          </html>
-                        `}
-                        className="w-full min-h-[calc(100vh-250px)] bg-white rounded border-none"
-                        sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
-                      />
+                      <Card>
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-lg font-semibold">{emails.find(e => e.id === expandedEmail)?.subject}</h3>
+                              <p className="text-sm text-muted-foreground">{emails.find(e => e.id === expandedEmail)?.from}</p>
+                            </div>
+                            <Badge variant={emails.find(e => e.id === expandedEmail)?.analysis?.isMarketing ? "destructive" : "default"}>
+                              {emails.find(e => e.id === expandedEmail)?.analysis?.isMarketing ? "Marketing" : "Important"}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <iframe
+                            srcDoc={`
+                              <!DOCTYPE html>
+                              <html>
+                                <head>
+                                  <base target="_blank">
+                                  <meta charset="utf-8">
+                                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                                  <style>
+                                    body {
+                                      font-family: system-ui, -apple-system, sans-serif;
+                                      line-height: 1.5;
+                                      margin: 0;
+                                      padding: 16px;
+                                      color: #374151;
+                                      font-size: 16px;
+                                    }
+                                    img {
+                                      max-width: 100%;
+                                      height: auto;
+                                      display: block;
+                                      margin: 1em 0;
+                                    }
+                                    a {
+                                      color: #2563eb;
+                                      text-decoration: none;
+                                    }
+                                    a:hover {
+                                      text-decoration: underline;
+                                    }
+                                    table {
+                                      max-width: 100%;
+                                      border-collapse: collapse;
+                                    }
+                                    td, th {
+                                      padding: 8px;
+                                      border: 1px solid #e5e7eb;
+                                    }
+                                    p {
+                                      margin: 1em 0;
+                                    }
+                                    pre, code {
+                                      white-space: pre-wrap;
+                                      word-wrap: break-word;
+                                    }
+                                    blockquote {
+                                      margin: 1em 0;
+                                      padding-left: 1em;
+                                      border-left: 4px solid #e5e7eb;
+                                      color: #6b7280;
+                                    }
+                                  </style>
+                                </head>
+                                <body>
+                                  ${emails.find(e => e.id === expandedEmail)?.body || 
+                                    `<div style="white-space: pre-wrap;">${emails.find(e => e.id === expandedEmail)?.text || ''}</div>`}
+                                </body>
+                              </html>
+                            `}
+                            className="w-full min-h-[calc(100vh-250px)] bg-white rounded border-none"
+                            sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
+                          />
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
                 ) : (
