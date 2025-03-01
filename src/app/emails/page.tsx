@@ -16,6 +16,11 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command"
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 interface EmailAnalysis {
   isMarketing: boolean;
@@ -263,94 +268,122 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="bg-gray-50">
-        {/* Main Content */}
+      <div className="bg-gray-50 min-h-screen">
         <div className="p-4">
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex justify-between items-center">
+            <h1 className="text-2xl font-bold tracking-tight">Email Analysis</h1>
             <Button
               size="lg"
               onClick={() => handleScan(false)}
               disabled={loading}
+              className="min-w-[200px]"
             >
-              {loading ? 'AI Analyzing...' : 'Analyze Recent Emails'}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  AI Analyzing...
+                </>
+              ) : (
+                'Analyze Recent Emails'
+              )}
             </Button>
           </div>
 
           {emails.length > 0 ? (
-            <div className="grid grid-cols-12 bg-white rounded-lg shadow">
+            <Card className="grid grid-cols-12">
               {/* Left Column - Email List */}
-              <div className="col-span-5 border-r border-gray-200 overflow-y-auto max-h-[calc(100vh-200px)]">
-                <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+              <div className="col-span-5 border-r">
+                <div className="p-4 border-b sticky top-0 bg-card z-10">
                   <div className="flex justify-between items-center">
-                    <h2 className="font-semibold text-gray-700">
-                      Analyzed {emails.length} Emails
+                    <div>
+                      <h2 className="font-semibold">
+                        Analyzed {emails.length} Emails
+                      </h2>
                       {emails.filter(e => !e.isRead).length > 0 && (
-                        <span className="ml-2 text-sm text-blue-600">
-                          ({emails.filter(e => !e.isRead).length} unread)
-                        </span>
+                        <p className="text-sm text-muted-foreground">
+                          {emails.filter(e => !e.isRead).length} unread
+                        </p>
                       )}
-                    </h2>
+                    </div>
                     <Button
                       onClick={handleDelete}
                       disabled={selectedEmails.size === 0 || deleting}
                       variant="destructive"
                       size="sm"
                     >
-                      {deleting ? 'Deleting...' : `Delete ${selectedEmails.size}`}
+                      {deleting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        `Delete ${selectedEmails.size}`
+                      )}
                     </Button>
                   </div>
                 </div>
-                <div className="divide-y divide-gray-200">
+                <ScrollArea className="h-[calc(100vh-250px)]">
                   {emails.map((email, index) => (
-                    <div
-                      key={`${email.id}-${index}`}
-                      className={`p-4 cursor-pointer transition-colors ${
-                        expandedEmail === email.id ? 'bg-blue-50' : 'hover:bg-gray-50'
-                      }`}
-                      onClick={() => toggleEmailExpansion(email.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedEmails.has(email.id)}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            toggleEmailSelection(email.id);
-                          }}
-                          className="mt-1"
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              {!email.isRead && (
-                                <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0" />
-                              )}
-                              <p className={`truncate ${!email.isRead ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
-                                {email.from}
+                    <div key={`${email.id}-${index}`}>
+                      <div
+                        className={cn(
+                          "p-4 cursor-pointer transition-colors",
+                          expandedEmail === email.id ? "bg-accent" : "hover:bg-accent/50"
+                        )}
+                        onClick={() => toggleEmailExpansion(email.id)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={selectedEmails.has(email.id)}
+                            onCheckedChange={(checked) => {
+                              toggleEmailSelection(email.id);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                {!email.isRead && (
+                                  <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0" />
+                                )}
+                                <p className={cn(
+                                  "truncate",
+                                  !email.isRead ? "font-semibold" : "text-muted-foreground"
+                                )}>
+                                  {email.from}
+                                </p>
+                              </div>
+                              <p className="text-xs text-muted-foreground whitespace-nowrap">
+                                {new Date(email.date).toLocaleDateString()}
                               </p>
                             </div>
-                            <p className="text-xs text-gray-500 whitespace-nowrap">
-                              {new Date(email.date).toLocaleDateString()}
+                            <p className={cn(
+                              "text-sm truncate mt-1",
+                              !email.isRead ? "font-semibold" : "text-muted-foreground"
+                            )}>
+                              {email.subject}
+                            </p>
+                            {email.analysis && settings.showMarketingLabels && (
+                              <div className="mt-1">
+                                <Badge variant={email.analysis.isMarketing ? "destructive" : "default"} className="text-xs">
+                                  {Math.round(email.analysis.confidence * 100)}% {email.analysis.isMarketing ? "Marketing" : "Important"}
+                                </Badge>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                  {email.analysis.reason}
+                                </p>
+                              </div>
+                            )}
+                            <p className={cn(
+                              "text-xs text-muted-foreground mt-1 line-clamp-2",
+                              !email.isRead && "font-medium"
+                            )}>
+                              {email.snippet}
                             </p>
                           </div>
-                          <p className={`text-sm truncate mt-1 ${!email.isRead ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
-                            {email.subject}
-                          </p>
-                          {email.analysis && settings.showMarketingLabels && (
-                            <div className={`text-xs mt-1 ${
-                              email.analysis.isMarketing ? 'text-red-600' : 'text-green-600'
-                            }`}>
-                              <span className="font-medium">
-                                {Math.round(email.analysis.confidence * 100)}% confident:
-                              </span>
-                              <span className="ml-1 line-clamp-1">{email.analysis.reason}</span>
-                            </div>
-                          )}
-                          <p className={`text-xs text-gray-500 mt-1 line-clamp-2 ${!email.isRead ? 'font-medium' : ''}`}>
-                            {email.snippet}
-                          </p>
                         </div>
                       </div>
+                      <Separator />
                     </div>
                   ))}
                   {hasMore && emails.length > 0 && (
@@ -361,22 +394,29 @@ export default function Dashboard() {
                         onClick={handleLoadMore}
                         disabled={loading}
                       >
-                        {loading ? 'Loading...' : 'Load More'}
+                        {loading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          'Load More'
+                        )}
                       </Button>
                     </div>
                   )}
-                </div>
+                </ScrollArea>
               </div>
 
               {/* Right Column - Email Content */}
               <div className="col-span-7">
                 {expandedEmail ? (
                   <div className="h-full">
-                    <div className="border-b border-gray-200 p-6 sticky top-0 bg-white z-10">
+                    <div className="border-b p-6 sticky top-0 bg-card z-10">
                       {emails.find(e => e.id === expandedEmail) && (
                         <div>
                           <div className="flex items-center justify-between mb-4">
-                            <h2 className="font-semibold text-xl text-gray-900">
+                            <h2 className="font-semibold text-xl">
                               {emails.find(e => e.id === expandedEmail)?.subject}
                             </h2>
                             <div className="flex items-center gap-3">
@@ -398,67 +438,58 @@ export default function Dashboard() {
                             </div>
                           </div>
                           
-                          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                            <div className="flex items-start gap-4">
-                              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-lg">
-                                {emails.find(e => e.id === expandedEmail)?.from.charAt(0).toUpperCase()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-4">
-                                  <div>
-                                    <p className="font-medium text-gray-900">
-                                      {emails.find(e => e.id === expandedEmail)?.from}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {new Date(emails.find(e => e.id === expandedEmail)?.date || '').toLocaleString()}
-                                    </p>
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-4">
+                                <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-accent-foreground font-semibold text-lg">
+                                  {emails.find(e => e.id === expandedEmail)?.from.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                      <p className="font-medium">
+                                        {emails.find(e => e.id === expandedEmail)?.from}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {new Date(emails.find(e => e.id === expandedEmail)?.date || '').toLocaleString()}
+                                      </p>
+                                    </div>
+                                    {emails.find(e => e.id === expandedEmail)?.analysis && (
+                                      <Badge variant={
+                                        emails.find(e => e.id === expandedEmail)?.analysis?.isMarketing
+                                          ? "destructive"
+                                          : "default"
+                                      }>
+                                        {emails.find(e => e.id === expandedEmail)?.analysis?.isMarketing
+                                          ? 'Marketing'
+                                          : 'Important'}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="mt-2 text-sm text-muted-foreground">
+                                    <span className="font-medium">ID:</span> {expandedEmail}
                                   </div>
                                   {emails.find(e => e.id === expandedEmail)?.analysis && (
-                                    <div className={`text-sm px-3 py-1 rounded-full ${
-                                      emails.find(e => e.id === expandedEmail)?.analysis?.isMarketing
-                                        ? 'bg-red-100 text-red-700'
-                                        : 'bg-green-100 text-green-700'
-                                    }`}>
-                                      {emails.find(e => e.id === expandedEmail)?.analysis?.isMarketing
-                                        ? 'Marketing'
-                                        : 'Important'}
+                                    <div className="mt-2 text-sm">
+                                      <span className="font-medium">AI Analysis:</span>
+                                      <span className="ml-2">
+                                        {emails.find(e => e.id === expandedEmail)?.analysis?.reason}
+                                        <span className="text-muted-foreground ml-2">
+                                          ({Math.round(emails.find(e => e.id === expandedEmail)?.analysis?.confidence || 0 * 100)}% confident)
+                                        </span>
+                                      </span>
                                     </div>
                                   )}
                                 </div>
-                                <div className="mt-2 text-sm text-gray-600">
-                                  <span className="font-medium">ID:</span> {expandedEmail}
-                                </div>
-                                {emails.find(e => e.id === expandedEmail)?.analysis && (
-                                  <div className="mt-2 text-sm">
-                                    <span className="font-medium">AI Analysis:</span>
-                                    <span className="ml-2">
-                                      {emails.find(e => e.id === expandedEmail)?.analysis?.reason}
-                                      <span className="text-gray-500 ml-2">
-                                        ({Math.round(emails.find(e => e.id === expandedEmail)?.analysis?.confidence || 0 * 100)}% confident)
-                                      </span>
-                                    </span>
-                                  </div>
-                                )}
                               </div>
-                            </div>
-                          </div>
+                            </CardContent>
+                          </Card>
                         </div>
                       )}
                     </div>
-                    <div className="p-6">
+                    <ScrollArea className="h-[calc(100vh-350px)] p-6">
                       <Card>
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="text-lg font-semibold">{emails.find(e => e.id === expandedEmail)?.subject}</h3>
-                              <p className="text-sm text-muted-foreground">{emails.find(e => e.id === expandedEmail)?.from}</p>
-                            </div>
-                            <Badge variant={emails.find(e => e.id === expandedEmail)?.analysis?.isMarketing ? "destructive" : "default"}>
-                              {emails.find(e => e.id === expandedEmail)?.analysis?.isMarketing ? "Marketing" : "Important"}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-0">
                           <iframe
                             srcDoc={`
                               <!DOCTYPE html>
@@ -473,7 +504,7 @@ export default function Dashboard() {
                                       line-height: 1.5;
                                       margin: 0;
                                       padding: 16px;
-                                      color: #374151;
+                                      color: var(--foreground);
                                       font-size: 16px;
                                     }
                                     img {
@@ -483,7 +514,7 @@ export default function Dashboard() {
                                       margin: 1em 0;
                                     }
                                     a {
-                                      color: #2563eb;
+                                      color: hsl(221.2 83.2% 53.3%);
                                       text-decoration: none;
                                     }
                                     a:hover {
@@ -495,7 +526,7 @@ export default function Dashboard() {
                                     }
                                     td, th {
                                       padding: 8px;
-                                      border: 1px solid #e5e7eb;
+                                      border: 1px solid var(--border);
                                     }
                                     p {
                                       margin: 1em 0;
@@ -507,8 +538,8 @@ export default function Dashboard() {
                                     blockquote {
                                       margin: 1em 0;
                                       padding-left: 1em;
-                                      border-left: 4px solid #e5e7eb;
-                                      color: #6b7280;
+                                      border-left: 4px solid var(--border);
+                                      color: var(--muted-foreground);
                                     }
                                   </style>
                                 </head>
@@ -518,24 +549,32 @@ export default function Dashboard() {
                                 </body>
                               </html>
                             `}
-                            className="w-full min-h-[calc(100vh-250px)] bg-white rounded border-none"
+                            className="w-full min-h-[500px] bg-background rounded-md"
                             sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
                           />
                         </CardContent>
                       </Card>
-                    </div>
+                    </ScrollArea>
                   </div>
                 ) : (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    Select an email to view its content
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <h3 className="text-lg font-medium">No Email Selected</h3>
+                      <p className="text-sm">Select an email from the list to view its content</p>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
           ) : (
-            <div className="h-[calc(100vh-200px)] flex items-center justify-center text-gray-500 bg-white rounded-lg shadow">
-              Click "Analyze Recent Emails" to start
-            </div>
+            <Card className="h-[calc(100vh-200px)]">
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <h3 className="text-lg font-medium">No Emails Analyzed</h3>
+                  <p className="text-sm">Click "Analyze Recent Emails" to start</p>
+                </div>
+              </div>
+            </Card>
           )}
         </div>
       </div>
