@@ -162,7 +162,7 @@ export async function GET(request: Request) {
     const session = await getServerSession(authOptions);
     
     if (!session?.accessToken) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      return NextResponse.json({ error: 'Not authenticated', code: 'UNAUTHENTICATED' }, { status: 401 });
     }
 
     // Get pagination parameters from URL
@@ -179,72 +179,85 @@ export async function GET(request: Request) {
       access_token: session.accessToken,
     });
 
-    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-    
-    // Get emails with pagination
-    let messageList: gmail_v1.Schema$Message[] = [];
-    let pageToken: string | undefined = undefined;
+    try {
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+      
+      // Get emails with pagination
+      let messageList: gmail_v1.Schema$Message[] = [];
+      let pageToken: string | undefined = undefined;
 
-    // If we need to skip pages, fetch until we reach our target page
-    for (let currentPage = 1; currentPage <= page; currentPage++) {
-      const response: gmail_v1.Schema$ListMessagesResponse = (await gmail.users.messages.list({
-        userId: 'me',
-        maxResults: limit,
-        pageToken: pageToken || undefined,
-      })).data;
-
-      if (currentPage === page) {
-        messageList = response.messages || [];
-        pageToken = response.nextPageToken || undefined;
-      } else {
-        pageToken = response.nextPageToken || undefined;
-      }
-    }
-    
-    // First, fetch all email details in parallel
-    const emailDetailsPromises = messageList.map(async (message) => {
-      try {
-        const email = await gmail.users.messages.get({
+      // If we need to skip pages, fetch until we reach our target page
+      for (let currentPage = 1; currentPage <= page; currentPage++) {
+        const response: gmail_v1.Schema$ListMessagesResponse = (await gmail.users.messages.list({
           userId: 'me',
-          id: message.id!,
-          format: 'full',
-        });
+          maxResults: limit,
+          pageToken: pageToken || undefined,
+        })).data;
 
-        const headers = email.data.payload?.headers;
-        const bodyContent = getEmailBody(email.data.payload || null);
-        const labelIds = email.data.labelIds || [];
-        
-        return {
-          id: message.id!,
-          from: headers?.find(h => h.name === 'From')?.value || 'Unknown',
-          subject: headers?.find(h => h.name === 'Subject')?.value || 'No Subject',
-          date: headers?.find(h => h.name === 'Date')?.value || new Date().toISOString(),
-          body: bodyContent.html,
-          text: bodyContent.text,
-          snippet: email.data.snippet || '',
-          isRead: !labelIds.includes('UNREAD'),
-        };
-      } catch (error) {
-        console.error('Error fetching email details:', error);
-        return null;
+        if (currentPage === page) {
+          messageList = response.messages || [];
+          pageToken = response.nextPageToken || undefined;
+        } else {
+          pageToken = response.nextPageToken || undefined;
+        }
       }
-    });
+      
+      // First, fetch all email details in parallel
+      const emailDetailsPromises = messageList.map(async (message) => {
+        try {
+          const email = await gmail.users.messages.get({
+            userId: 'me',
+            id: message.id!,
+            format: 'full',
+          });
 
-    const emailDetails = (await Promise.all(emailDetailsPromises)).filter((email): email is EmailData => email !== null);
-    
-    // Then process them in batches
-    const analyzedEmails = await processBatch(emailDetails);
+          const headers = email.data.payload?.headers;
+          const bodyContent = getEmailBody(email.data.payload || null);
+          const labelIds = email.data.labelIds || [];
+          
+          return {
+            id: message.id!,
+            from: headers?.find(h => h.name === 'From')?.value || 'Unknown',
+            subject: headers?.find(h => h.name === 'Subject')?.value || 'No Subject',
+            date: headers?.find(h => h.name === 'Date')?.value || new Date().toISOString(),
+            body: bodyContent.html,
+            text: bodyContent.text,
+            snippet: email.data.snippet || '',
+            isRead: !labelIds.includes('UNREAD'),
+          };
+        } catch (error) {
+          console.error('Error fetching email details:', error);
+          return null;
+        }
+      });
 
-    return NextResponse.json({ 
-      emails: analyzedEmails,
-      nextPage: page + 1,
-      hasMore: pageToken !== undefined
-    });
+      const emailDetails = (await Promise.all(emailDetailsPromises)).filter((email): email is EmailData => email !== null);
+      
+      // Then process them in batches
+      const analyzedEmails = await processBatch(emailDetails);
+
+      return NextResponse.json({ 
+        emails: analyzedEmails,
+        nextPage: page + 1,
+        hasMore: pageToken !== undefined
+      });
+    } catch (error: any) {
+      if (error.response?.status === 401 || error.message.includes('invalid_grant')) {
+        return NextResponse.json({ error: 'Session expired', code: 'TOKEN_EXPIRED' }, { status: 401 });
+      }
+      throw error;
+    }
   } catch (error: any) {
     console.error('Error analyzing emails:', error.message);
     console.error('Error details:', error.response?.data || error);
+    
+    // Handle specific error cases
+    if (error.response?.status === 401 || error.message.includes('invalid_grant')) {
+      return NextResponse.json({ error: 'Session expired', code: 'TOKEN_EXPIRED' }, { status: 401 });
+    }
+    
     return NextResponse.json(
-      { error: `Failed to analyze emails: ${error.message}` },
+      { error: `Failed to analyze emails: ${error.message}`, code: 'UNKNOWN_ERROR' },
       { status: 500 }
     );
   }

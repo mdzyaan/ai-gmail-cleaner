@@ -40,6 +40,15 @@ export default function Home() {
       const response = await fetch(`/api/analyze-emails?page=${currentPage}&limit=${EMAILS_PER_PAGE}`);
       const data = await response.json();
       
+      if (!response.ok) {
+        if (data.code === 'TOKEN_EXPIRED' || data.code === 'UNAUTHENTICATED') {
+          // Automatically sign out if the session is expired or invalid
+          await signOut();
+          return;
+        }
+        throw new Error(data.error || 'Failed to analyze emails');
+      }
+      
       if (data.emails) {
         if (!isLoadMore) {
           setEmails(data.emails);
@@ -100,6 +109,15 @@ export default function Home() {
       });
       const data = await response.json();
       
+      if (!response.ok) {
+        if (data.code === 'TOKEN_EXPIRED' || data.code === 'UNAUTHENTICATED') {
+          // Automatically sign out if the session is expired or invalid
+          await signOut();
+          return;
+        }
+        throw new Error(data.error || 'Failed to delete emails');
+      }
+      
       if (data.success) {
         // Clear expanded email if it was deleted
         if (expandedEmail && selectedEmails.has(expandedEmail)) {
@@ -152,6 +170,17 @@ export default function Home() {
         body: JSON.stringify({ emailId }),
       });
 
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.code === 'TOKEN_EXPIRED' || data.code === 'UNAUTHENTICATED') {
+          // Automatically sign out if the session is expired or invalid
+          await signOut();
+          return;
+        }
+        throw new Error(data.error || 'Failed to mark email as read');
+      }
+
       if (response.ok) {
         // Update local state only after successful API call
         setEmails(prevEmails => 
@@ -159,8 +188,6 @@ export default function Home() {
             email.id === emailId ? { ...email, isRead: true } : email
           )
         );
-      } else {
-        console.error('Failed to mark email as read');
       }
     } catch (error) {
       console.error('Error marking email as read:', error);
