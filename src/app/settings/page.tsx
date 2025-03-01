@@ -34,21 +34,23 @@ export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!session) {
+    // Only redirect if we're sure there's no session (session is null, not undefined)
+    if (session === null) {
       router.push('/login');
       return;
     }
 
-    // Load settings from localStorage
-    const savedSettings = localStorage.getItem('emailCleanupSettings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
+    // Load settings from localStorage only when we have a session
+    if (session) {
+      const savedSettings = localStorage.getItem('emailCleanupSettings');
+      if (savedSettings) {
+        setSettings(JSON.parse(savedSettings));
+      }
     }
   }, [session, router]);
 
   const handleSave = () => {
     setIsSaving(true);
-    // Save settings to localStorage
     localStorage.setItem('emailCleanupSettings', JSON.stringify(settings));
     
     // toast({
@@ -59,9 +61,8 @@ export default function Settings() {
     setTimeout(() => setIsSaving(false), 500);
   };
 
-  if (!session) {
-    return null;
-  }
+  // Only return null when we're sure there's no session
+  if (session === null) return null;
 
   return (
     <DashboardLayout>
